@@ -37,7 +37,7 @@ function panopto_cure_clean_iframe($content){
         $url = $matches[1];
         $panopto_urls[] = $url;
         $id = panopto_cure_id($url);
-        $shortcode = "<div class='player' id='player-{$i}' data-session-id='{$id}'></div>[panoptocure id='{$id}']";
+        $shortcode = "<div class='player' id='player-{$i}' data-session-id='{$id}'></div>";
         $i++;
         return $shortcode;
     }, $content);
