@@ -60,11 +60,13 @@ function panopto_cure_clean_iframe($content){
         return $matches[0];
     }, $content);
 
-    // Handle plain paragraph links to Panopto URLs
-    $link_pattern = '/<p>(?:\s*<a[^>]*>)?\s*(https?:\/\/[^\s<]*panopto[^\s<]*\/Panopto\/Pages\/Viewer\.aspx\?[^\s<]+)\s*(?:<\/a>)?\s*<\/p>/is';
+    // Handle plain paragraph links to Panopto URLs.
+    // Supports both raw URL text and anchor tags where the URL is in the href (Classic Editor).
+        $link_pattern = '/(?:<p>\s*)?(?:<a[^>]+href=("|\')(https?:\/\/[^"\']*panopto[^"\']*\/Panopto\/Pages\/Viewer\.aspx\?[^"\']+)\1[^>]*>.*?<\/a>|(https?:\/\/[^\s<]*panopto[^\s<]*\/Panopto\/Pages\/Viewer\.aspx\?[^\s<]+))(?:\s*<\/p>)?/is';
 
     $content = preg_replace_callback($link_pattern, function($matches) use (&$i) {
-        $url = $matches[1];
+        // If an anchor href was matched it will be in $matches[2], otherwise raw URL will be in $matches[3]
+        $url = !empty($matches[2]) ? $matches[2] : ($matches[3] ?? '');
         $id = panopto_cure_id($url);
         if ($id) {
             $shortcode = "<div class='player' id='player-{$i}' data-session-id='{$id}'></div>";
