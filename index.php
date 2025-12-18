@@ -60,9 +60,39 @@ function panopto_cure_clean_iframe($content){
         return $matches[0];
     }, $content);
 
+    // SiteOrigin and generic handlers:
+    // 1) Anchors anywhere (useful for SiteOrigin widgets that wrap links in divs)
+    $anchor_pattern = '/<a[^>]+href=["\'](https?:\/\/[^"\']*panopto[^"\']*\/Panopto\/Pages\/Viewer\.aspx\?[^"\']+)["\'][^>]*>.*?<\/a>/is';
+
+    $content = preg_replace_callback($anchor_pattern, function($matches) use (&$i) {
+        $url = $matches[1];
+        $id = panopto_cure_id($url);
+        if ($id) {
+            $shortcode = "<div class='player' id='player-{$i}' data-session-id='{$id}'></div>";
+            $i++;
+            return $shortcode;
+        }
+        return $matches[0];
+    }, $content);
+
+    // 2) Plain URLs anywhere in text nodes (avoid matching inside attributes)
+    $any_url_pattern = '/(?<!["\'>=])\b(https?:\/\/[^\s<]*panopto[^\s<]*\/Panopto\/Pages\/Viewer\.aspx\?[^\s<]+)\b/is';
+
+    $content = preg_replace_callback($any_url_pattern, function($matches) use (&$i) {
+        $url = $matches[1];
+        $id = panopto_cure_id($url);
+        if ($id) {
+            $shortcode = "<div class='player' id='player-{$i}' data-session-id='{$id}'></div>";
+            $i++;
+            return $shortcode;
+        }
+        return $matches[0];
+    }, $content);
+
+    // Backward-compatible: still keep paragraph/anchor pattern (already covered above but kept for safety)
     // Handle plain paragraph links to Panopto URLs.
     // Supports both raw URL text and anchor tags where the URL is in the href (Classic Editor).
-        $link_pattern = '/(?:<p>\s*)?(?:<a[^>]+href=("|\')(https?:\/\/[^"\']*panopto[^"\']*\/Panopto\/Pages\/Viewer\.aspx\?[^"\']+)\1[^>]*>.*?<\/a>|(https?:\/\/[^\s<]*panopto[^\s<]*\/Panopto\/Pages\/Viewer\.aspx\?[^\s<]+))(?:\s*<\/p>)?/is';
+    $link_pattern = '/(?:<p>\s*)?(?:<a[^>]+href=("|\')(https?:\/\/[^"\']*panopto[^"\']*\/Panopto\/Pages\/Viewer\.aspx\?[^"\']+)\1[^>]*>.*?<\/a>|(https?:\/\/[^\s<]*panopto[^\s<]*\/Panopto\/Pages\/Viewer\.aspx\?[^\s<]+))(?:\s*<\/p>)?/is';
 
     $content = preg_replace_callback($link_pattern, function($matches) use (&$i) {
         // If an anchor href was matched it will be in $matches[2], otherwise raw URL will be in $matches[3]
